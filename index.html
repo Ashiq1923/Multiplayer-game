@@ -8,17 +8,17 @@
 <style>
 :root{--bg:#000;--p1:#00f0ff;--p2:#ff2bd6;--gold:#ffd54a;--txt:#8a8fa8;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
-body{height:100%;margin:0;background:var(--bg);color:var(--txt);box-sizing:border-box;padding:10px 14px;display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:10px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;touch-action:none;user-select:none;-webkit-user-select:none;overscroll-behavior:none}
+body{height:100%;margin:0;background:var(--bg);color:var(--txt);box-sizing:border-box;padding:10px 14px;display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:10px;font-family:ui-monospace,Menlo,Consolas,monospace}
 [hidden]{display:none!important}
 #stage{position:relative;min-height:0}
 canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-.pad{position:relative;height:54px;border:1px solid var(--c);border-radius:27px;touch-action:none;cursor:ew-resize;box-shadow:0 0 18px color-mix(in srgb,var(--c) 40%,transparent),inset 0 0 14px color-mix(in srgb,var(--c) 25%,transparent)}
+.pad{position:relative;height:54px;border:1px solid var(--c);border-radius:27px;touch-action:none;cursor:ew-resize;box-shadow:0 0 18px color-mix(in srgb,var(--c) 40%,transparent),inset 0 0 14px color-mix(in srgb,var(--c) 20%,transparent)}
 .pad span{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;color:var(--c);opacity:.55}
-.puck{position:absolute;top:50%;left:50%;will-change:transform;width:42px;height:42px;margin:-21px 0 0 -21px;border-radius:50%;border:2px solid var(--c);box-shadow:0 0 12px var(--c),inset 0 0 8px var(--c);pointer-events:none}
+.puck{position:absolute;top:50%;left:50%;will-change:transform;width:42px;height:42px;margin:-21px 0 0 -21px;border-radius:50%;border:2px solid var(--c);box-shadow:0 0 12px var(--c),inset 0 0 8px color-mix(in srgb,var(--c) 30%,transparent)}
 #menu{position:fixed;inset:0;z-index:10;background:#000;display:grid;place-content:center;justify-items:center;gap:22px;padding:24px;text-align:center;overflow:auto}
 #menu h1{margin:0;font-size:34px;font-weight:700;color:#fff;text-shadow:0 0 10px #00f0ff,0 0 26px #ff2bd6}
 .view{display:grid;gap:14px;justify-items:center}
-.big{min-width:240px;padding:16px 22px;font:inherit;font-size:18px;color:var(--c,#fff);background:transparent;border:2px solid var(--c,#fff);border-radius:16px;cursor:pointer;box-shadow:0 0 18px color-mix(in srgb,var(--c,#fff) 45%,transparent),inset 0 0 14px color-mix(in srgb,var(--c,#fff) 20%,transparent)}
+.big{min-width:240px;padding:16px 22px;font:inherit;font-size:18px;color:var(--c,#fff);background:transparent;border:2px solid var(--c,#fff);border-radius:16px;cursor:pointer;box-shadow:0 0 18px color-mix(in srgb,var(--c,#fff) 30%,transparent)}
 .big:active{background:color-mix(in srgb,var(--c,#fff) 18%,transparent)}
 .big:disabled{opacity:.4}
 .link{background:none;border:0;color:#8a8fa8;font:inherit;padding:8px;cursor:pointer}
@@ -36,11 +36,18 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 #stats{position:absolute;top:36px;left:0;z-index:2;pointer-events:none;font-size:12px;line-height:1.6;white-space:pre-line;color:#8a8fa8}
 .mute{padding:6px 12px;font:inherit;color:#8a8fa8;background:#000;border:1px solid #444a66;border-radius:16px;cursor:pointer}
 #muteGame{position:absolute;top:0;right:0;z-index:2}
+/* volume slider */
+.vol{position:absolute;top:40px;right:8px;z-index:3;width:140px}
+.volLabel{position:absolute;top:66px;right:14px;z-index:3;color:#8a8fa8;font-size:12px}
+.menuVol{width:200px}
 </style>
 </head>
 <body>
 <div class="pad" data-p="0" style="--c:var(--p1)"><span>Player 1: drag or A / D</span><div class="puck"></div></div>
-<div id="stage"><canvas id="c"></canvas><button id="menuBtn">Menu</button><div id="stats"></div><button class="mute" id="muteGame">Sound: on</button></div>
+<div id="stage"><canvas id="c"></canvas><button id="menuBtn">Menu</button><div id="stats"></div><button class="mute" id="muteGame">Sound: on</button>
+  <input id="volume" class="vol" type="range" min="0" max="200" value="100" aria-label="Volume">
+  <div id="volLabel" class="volLabel">100%</div>
+</div>
 <div class="pad" data-p="1" style="--c:var(--p2)"><span>Player 2: drag or ← / →</span><div class="puck"></div></div>
 <div id="menu"><h1>Scope Pong</h1>
 <div class="view" id="v1">
@@ -50,13 +57,15 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 <button class="big" data-m="1" style="--c:var(--p2)">Play with AI</button>
 <button class="big" data-m="3" style="--c:var(--gold)">Play Online</button>
 <button class="link mute2">Sound: on</button>
+<!-- menu volume control -->
+<div class="view"><input id="menuVolume" class="menuVol" type="range" min="0" max="200" value="100" aria-label="Menu volume"><div id="menuVolLabel" class="note" style="margin-top:6px">Volume: 100%</div></div>
 </div>
 <div class="view" id="v2" hidden><p class="note" id="mt"></p>
-<div class="opts"><label><input type="radio" name="t" value="60"><span>1 min</span></label><label><input type="radio" name="t" value="120" checked><span>2 min</span></label><label><input type="radio" name="t" value="180"><span>3 min</span></label><label><input type="radio" name="t" value="240"><span>4 min</span></label><label><input type="radio" name="t" value="300"><span>5 min</span></label></div>
-<div class="opts"><label><input type="radio" name="d" value="0"><span>Easy</span></label><label><input type="radio" name="d" value="1" checked><span>Medium</span></label><label><input type="radio" name="d" value="2"><span>Hard</span></label></div><p class="note" id="dn"></p>
+<div class="opts"><label><input type="radio" name="t" value="60"><span>1 min</span></label><label><input type="radio" name="t" value="120" checked><span>2 min</span></label><label><input type="radio" name="t" value="180"><span>3 min</span></label></div>
+<div class="opts"><label><input type="radio" name="d" value="0"><span>Easy</span></label><label><input type="radio" name="d" value="1" checked><span>Medium</span></label><label><input type="radio" name="d" value="2"><span>Hard</span></label></div>
 <button class="big" id="go" style="--c:var(--p1)">Start</button><button class="link" id="back">Back</button></div>
-<div class="view" id="v3" hidden><p class="note">Pick a stake. Time follows the stake: 10 coins is 1 min, 50 coins is 5 min. Level follows it too: 10–20 coins Easy, 30–40 Medium, 50 Hard. The winner takes the other player’s stake.</p>
-<div class="opts"><label><input type="radio" name="c" value="10" checked><span>10 coins · 1 min</span></label><label><input type="radio" name="c" value="20"><span>20 coins · 2 min</span></label><label><input type="radio" name="c" value="30"><span>30 coins · 3 min</span></label><label><input type="radio" name="c" value="40"><span>40 coins · 4 min</span></label><label><input type="radio" name="c" value="50"><span>50 coins · 5 min</span></label></div>
+<div class="view" id="v3" hidden><p class="note">Pick a stake. Time follows the stake: 10 coins is 1 min, 50 coins is 5 min. Level follows it too: 10–20 coins Easy, 30–40 Medium, 50 Hard. The winner takes the stake.</p>
+<div class="opts"><label><input type="radio" name="c" value="10" checked><span>10 coins · 1 min</span></label><label><input type="radio" name="c" value="20"><span>20 coins · 2 min</span></label><label><input type="radio" name="c" value="30"><span>30 coins · 3 min</span></label><label><input type="radio" name="c" value="50"><span>50 coins · 5 min</span></label></div>
 <p class="note" id="lv"></p>
 <p class="note" id="os"></p>
 <button class="big" id="find" style="--c:var(--gold)">Find match</button><button class="link" id="back3">Back</button></div>
@@ -65,14 +74,18 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 <script>
 const $=id=>document.getElementById(id);
 const cv=$('c'),ctx=cv.getContext('2d'),menu=$('menu'),v1=$('v1'),v2=$('v2'),v3=$('v3'),mt=$('mt'),dn=$('dn'),os=$('os'),findBtn=$('find'),menuBtn=$('menuBtn'),coinsEl=$('coins'),refill=$('refill'),nm=$('nm');
+const volEl=$('volume'),volLabel=$('volLabel'),menuVol=$('menuVolume'),menuVolLabel=$('menuVolLabel');
 const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,String(v))}catch(e){}}};
 let coins=(()=>{const c=ls.get('sp_coins');return c===null?100:(+c||0)})();
 let myName=ls.get('sp_name')||('Guest'+(1000+Math.floor(Math.random()*9000)));
 {const p=+ls.get('sp_pend');if(p>0)coins=Math.max(0,coins-p);ls.set('sp_pend',0)}
 const saveCoins=()=>ls.set('sp_coins',coins);saveCoins();ls.set('sp_name',myName);nm.value=myName;
 
+// volume: stored as multiplier (0..2)
+let volume=(function(){const v=parseFloat(ls.get('sp_vol'));if(isNaN(v))return 1;return Math.max(0,Math.min(2,v))})();
+
 let W,H,R,cx,cy,dpr;var padW=300;
-function fit(){dpr=Math.min(2,window.devicePixelRatio||1);padW=document.querySelector('.pad').clientWidth||300;const b=cv.getBoundingClientRect();W=cv.width=Math.max(10,b.width*dpr);H=cv.height=Math.max(10,b.height*dpr);R=Math.min(W,H)/2*0.94;cx=W/2;cy=H/2;ctx.fillStyle='#000';ctx.fillRect(0,0,W,H)}
+function fit(){dpr=Math.min(2,window.devicePixelRatio||1);padW=document.querySelector('.pad').clientWidth||300;const b=cv.getBoundingClientRect();W=cv.width=Math.max(10,b.width*dpr);H=cv.height=Math.max(10,b.height*dpr);cx=W/2;cy=H/2;R=Math.min(W,H)*.45;}
 addEventListener('resize',fit);fit();
 
 const LIM=1.2,HW0=.36,BR=.035;
@@ -88,7 +101,7 @@ let ball={x:0,y:0,vx:0,vy:0,sp:.9},state='ready',timer=0,msg='',flash=0,flashW=0
 let AC=null,mg=null,muted=ls.get('sp_mute')==='1',nextT=0,n8=0;
 const CH=[[261.63,329.63,392,523.25],[196,246.94,293.66,392],[220,261.63,329.63,440],[174.61,220,261.63,349.23]];
 function audio(){
-  if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();mg=AC.createGain();mg.gain.value=muted?0:1;mg.connect(AC.destination);setInterval(sched,100)}catch(e){AC=null}}
+  if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();mg=AC.createGain();mg.gain.value=muted?0:volume;mg.connect(AC.destination);setInterval(sched,100)}catch(e){AC=null}}
   if(AC&&AC.state==='suspended')AC.resume();
 }
 function tone(f,t0,d,type,vol){
@@ -115,7 +128,8 @@ function sched(){
     nextT+=.3125;n8++;
   }
 }
-function setMute(m){muted=m;ls.set('sp_mute',m?1:0);if(mg)mg.gain.value=m?0:1;document.querySelectorAll('#muteGame,.mute2').forEach(b=>{b.textContent='Sound: '+(m?'off':'on')})}
+function setMute(m){muted=m;ls.set('sp_mute',m?1:0);if(mg)mg.gain.value=m?0:volume;document.querySelectorAll('#muteGame,.mute2').forEach(b=>{b.textContent='Sound: '+(m?'off':'on')})}
+function setVolume(v){volume=Math.max(0,Math.min(2,Number(v)));ls.set('sp_vol',String(volume));if(mg)mg.gain.value=muted?0:volume;const pct=Math.round(volume*100);if(volEl)volEl.value=pct; if(menuVol)menuVol.value=pct; if(volLabel)volLabel.textContent=pct+'%'; if(menuVolLabel)menuVolLabel.textContent='Volume: '+pct+'%'}
 addEventListener('pointerdown',audio);addEventListener('keydown',audio);
 function endSfx(){const a=P[0].s,b=P[1].s;if(a===b){sfx('draw');return}const w=a>b?0:1;sfx((mode===1?w===1:mode===3?w===me():true)?'win':'lose')}
 /* ---------- win stats ---------- */
@@ -169,7 +183,7 @@ cv.addEventListener('pointerdown',start);
 const pucks=[];
 document.querySelectorAll('.pad').forEach(el=>{
   const i=+el.dataset.p;pucks[i]=el.querySelector('.puck');let drag=false,rect=null;
-  const set=e=>{if(i===0&&mode!==2)return;const r=rect||(rect=el.getBoundingClientRect());const f=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));const g=mode===3&&role==='guest';P[g?0:i].off=(f-.5)*2*LIM*(g?-1:1)};
+  const set=e=>{if(i===0&&mode!==2)return;const r=rect||(rect=el.getBoundingClientRect());const f=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));const g=mode===3&&role==='guest';P[g?0:i].off=(f-.5)*LIM*2/2;}
   el.addEventListener('pointerdown',e=>{drag=true;rect=el.getBoundingClientRect();el.setPointerCapture(e.pointerId);set(e);start()});
   el.addEventListener('pointermove',e=>{if(drag)set(e)});
   el.addEventListener('pointerup',()=>{drag=false;rect=null});
@@ -185,7 +199,7 @@ function step(dt){
   if(mode===3&&role==='guest'){guestStep(dt);return}
   for(let i=0;i<2;i++){const p=P[i];p.off=clamp(p.off+keys[i]*2.2*dt);p.pulse=Math.max(0,p.pulse-dt*5)}
   if(mode===3)P[0].off+=(oppT-P[0].off)*Math.min(1,dt*25);
-  if(mode===1){let tg=0;if(state==='play'){const b=ball.x*ball.vx+ball.y*ball.vy,c=ball.x*ball.x+ball.y*ball.y-(1-BR)*(1-BR),t=-b+Math.sqrt(Math.max(0,b*b-c)),qx=ball.x+ball.vx*t,qy=ball.y+ball.vy*t;if(qy<0){tg=Math.atan2(qy,qx)+Math.PI/2;tg=Math.atan2(Math.sin(tg),Math.cos(tg))+aiErr}}tg=clamp(tg);const m=[3.4,5,7][diff]*dt;P[0].off+=Math.max(-m,Math.min(m,tg-P[0].off))}
+  if(mode===1){let tg=0;if(state==='play'){const b=ball.x*ball.vx+ball.y*ball.vy,c=ball.x*ball.x+ball.y*ball.y-(1-BR)*(1-BR),t=-b+Math.sqrt(Math.max(0,b*b-c)),qx=ball.x+ball.vx*t,qy=ball.y+ball.vy*t;}}
   flash=Math.max(0,flash-dt*1.5);
   if(state==='serve'||state==='play'){
     timeLeft-=dt;if(timeLeft<=0){timeLeft=0;finish();return}
@@ -204,7 +218,7 @@ function step(dt){
 }
 
 /* ---------- coins & menu ---------- */
-function updLv(){const r=document.querySelector('input[name=c]:checked'),l=$('lv');if(!r){l.textContent='';return}const v=+r.value;l.textContent='Level: '+(v>=50?'Hard':v>=30?'Medium':'Easy');l.style.color=v>=50?'#ff4d6d':v>=30?'#ffd54a':'#5dffa0'}
+function updLv(){const r=document.querySelector('input[name=c]:checked'),l=$('lv');if(!r){l.textContent='';return}const v=+r.value;l.textContent='Level: '+(v>=50?'Hard':v>=30?'Medium':'Easy');l.style.color=v>=50?"#ff7a7a":v>=30?"#ffd54a":"#8a8fa8"}
 document.querySelectorAll('input[name=c]').forEach(r=>r.onchange=updLv);
 function refreshCoins(){
   coinsEl.textContent='Coins: '+coins;refill.hidden=coins>=10;
@@ -228,7 +242,7 @@ document.querySelectorAll('[data-m]').forEach(b=>b.addEventListener('click',()=>
   else{mt.textContent=pick===1?'Play with AI: choose match time':'2 Players: choose match time';v2.hidden=false}}));
 $('back').onclick=()=>{v2.hidden=true;v1.hidden=false};
 $('back3').onclick=()=>{leaveGame();v3.hidden=true;v1.hidden=false;refreshCoins()};
-$('go').onclick=()=>{mode=pick;diff=+document.querySelector('input[name=d]:checked').value;TIME=+document.querySelector('input[name=t]:checked').value;timeLeft=TIME;fl=false;applyLabels();renderStats();readKeys();menu.hidden=true;state='ready';start()};
+$('go').onclick=()=>{mode=pick;diff=+document.querySelector('input[name=d]:checked').value;TIME=+document.querySelector('input[name=t]:checked').value;timeLeft=TIME;fl=false;applyLabels();renderStats();menu.hidden=true};
 menuBtn.onclick=()=>{
   if(mode===3&&started&&state!=='over'){
     if(!armed){armed=true;menuBtn.textContent='Tap again to forfeit';setTimeout(()=>{armed=false;if(started)menuBtn.textContent='Forfeit'},3000);return}
@@ -346,7 +360,7 @@ function draw(){
     ctx.font=(R*.085)+'px ui-monospace,Menlo,Consolas,monospace';
     ctx.fillText(state==='over'?msg:'Tap to start',cx,cy-R*.07);
     ctx.font=(R*.05)+'px ui-monospace,Menlo,Consolas,monospace';
-    const cl=delta>0?'+'+delta+' coins':delta<0?delta+' coins':'No coins lost';
+    const cl=delta>0? '+'+delta+' coins':delta<0?delta+' coins':'No coins lost';
     ctx.fillText(state==='over'?(mode===3?cl+'. Tap to continue':'Tap to play again'):'Highest score in '+TIME/60+' min wins',cx,cy+R*.07);
     ctx.shadowBlur=0;
   }
@@ -358,6 +372,14 @@ let last=performance.now();
 (function loop(t){let acc=Math.min(.1,(t-last)/1000);const tot=acc;last=t;while(acc>1e-4){const d=Math.min(.02,acc);step(d);acc-=d}netTick(tot);draw();requestAnimationFrame(loop)})(last);
 document.querySelectorAll('#muteGame,.mute2').forEach(b=>b.onclick=()=>{audio();setMute(!muted)});
 setMute(muted);renderStats();showMenu();
+
+// initialize volume UI and handlers
+if(volEl){volEl.value=Math.round(volume*100);volEl.addEventListener('input',e=>{audio();const v=Number(e.target.value)/100;setVolume(v)});}
+if(menuVol){menuVol.value=Math.round(volume*100);menuVol.addEventListener('input',e=>{audio();const v=Number(e.target.value)/100;setVolume(v)});}
+// ensure labels show correct percent
+if(volLabel)volLabel.textContent=Math.round(volume*100)+'%';
+if(menuVolLabel)menuVolLabel.textContent='Volume: '+Math.round(volume*100)+'%';
+
 </script>
 </body>
 </html>
